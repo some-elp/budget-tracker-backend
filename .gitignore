@@ -1,0 +1,46 @@
+
+# Python cache / bytecode
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+
+# IDEs
+.vscode/
+.idea/
+
+
+
+# Logs
+*.log
+
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# FastAPI / server artifacts
+
+*.sqlite3
+*.db
+
+# ======================
+# Build / packaging
+# ======================
+dist/
+build/
+*.egg-info/
