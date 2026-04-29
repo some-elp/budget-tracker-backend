@@ -14,7 +14,8 @@ def create_transaction(
     db: Session = Depends(get_db)
 ):
     category = db.query(Category).filter(
-      Category.id == transaction.category_id
+      Category.id == transaction.category_id,
+      Category.user_id == 1
     ).first()
 
     if not category:
