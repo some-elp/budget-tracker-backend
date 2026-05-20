@@ -8,7 +8,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(nullable=False)
+    hashed_password: Mapped[str] = mapped_column(nullable=False)
 
     # Relationships
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete")

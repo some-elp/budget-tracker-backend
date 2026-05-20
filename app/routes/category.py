@@ -3,15 +3,21 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.schemas.category import CategoryCreate, CategoryResponse
 from app.models.category import Category
+from app.core.deps import get_current_user
+from app.models.user import User
 
 router  = APIRouter()
 
 # POST: Create a new category
 @router.post("/", response_model=CategoryResponse)
-def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
+def create_category(
+    category: CategoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     new_category = Category(
         name=category.name,
-        user_id=1 # hardcoded
+        user_id=current_user.id
     )
 
     db.add(new_category)
@@ -22,15 +28,15 @@ def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
 
 # GET: get all categories
 @router.get("/", response_model=list[CategoryResponse])
-def get_categories(db: Session = Depends(get_db)):
-    return db.query(Category).filter(Category.user_id == 1).all()
+def get_categories(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(Category).filter(Category.user_id == current_user.id).all()
 
 # GET: get one category by ID
 @router.get("/{category_id}", response_model=CategoryResponse)
-def get_category(category_id: int, db: Session = Depends(get_db)):
+def get_category(category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     category =  db.query(Category).filter(
         Category.id == category_id,
-        Category.user_id == 1
+        Category.user_id == current_user.id
     ).first()
 
     if not category:
@@ -40,10 +46,10 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
 
 # DELETE: delete category by ID
 @router.delete("/{category_id}")
-def delete_category(category_id: int, db: Session = Depends(get_db)):
+def delete_category(category_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     category = db.query(Category).filter(
         Category.id == category_id,
-        Category.user_id == 1
+        Category.user_id == current_user.id
     ).first()
 
     if not category:

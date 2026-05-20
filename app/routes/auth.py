@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlelchemy.orm import Session
+from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.user import User
 from app.core.auth import hash_password, verify_password, create_access_token
@@ -26,7 +26,8 @@ def register(email: str, password: str, db: Session = Depends(get_db)):
   return {"message": "User created"}
 
 # POST: Login user
-def login(email: str, password: str, db: Session = Depents(get_db)):
+@router.post("/login")
+def login(email: str, password: str, db: Session = Depends(get_db)):
   user = db.query(User).filter(User.email == email).first()
 
   if not user or not verify_password(password, user.hashed_password):

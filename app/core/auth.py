@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
+import bcrypt
 import os
 
 load_dotenv()
@@ -12,9 +13,11 @@ algo = os.getenv("ALGORITHM")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# hash password
 def hash_password(password: str) -> str:
   return pwd_context.hash(password)
 
+# check if entered password's hash is the same as the one stored
 def verify_password(plain_password: str, hashed_password: str) -> bool:
   return pwd_context.verify(plain_password, hashed_password)
 

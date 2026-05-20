@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.db import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionResponse
-from app.models.
+from app.core.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -11,20 +12,22 @@ router = APIRouter()
 @router.post("/")
 def create_transaction(
     transaction: TransactionCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     category = db.query(Category).filter(
       Category.id == transaction.category_id,
-      Category.user_id == 1
+      Category.user_id == current_user.id
     ).first()
 
     if not category:
       raise HTTPException(status_code=400, detail ="Invalid category_id")
+
     new_tx = Transaction(
         amount=transaction.amount,
         type=transaction.type,
         category_id=transaction.category_id,
-        user_id=1,  # harcoded
+        user_id=current_user.id,
         description=transaction.description,
         date=transaction.date
     )
@@ -37,18 +40,22 @@ def create_transaction(
 
 # GET: get all transactions
 @router.get("/", response_model=list[TransactionResponse])
-def get_transactions(db: Session = Depends(get_db)):
+def get_transactions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Transaction)\
     .options(joinedload(Transaction.category))\
-    .filter(Transaction.user_id == 1)\
+    .filter(Transaction.user_id == current_user.id)\
     .all()
 
 # GET: get single transaction by ID
 @router.get("/{transaction_id}", response_model=TransactionResponse)
-def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
+def get_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     tx = db.query(Transaction).filter(
         Transaction.id == transaction_id,
-        Transaction.user_id == 1
+        Transaction.user_id == current_user.id
     ).first()
 
     if not tx:
@@ -57,10 +64,14 @@ def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
 
 # DELETE: remove transaction from database
 @router.delete("/{transaction_id}")
-def delete_transaction(transaction_id: int, db: Session = Depends(get_db)):
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     tx = db.query(Transaction).filter(
         Transaction.id == transaction_id,
-        Transaction.user_id == 1
+        Transaction.user_id ==  current_user.id
     ).first()
 
     if not tx:
