@@ -7,19 +7,22 @@ import os
 
 load_dotenv()
 
-access_token_expire_minutes = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 secret_key = os.getenv("SECRET_KEY")
 algo = os.getenv("ALGORITHM")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# hash password
+# hash password using bcrypt
 def hash_password(password: str) -> str:
-  return pwd_context.hash(password)
+  return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 # check if entered password's hash is the same as the one stored
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-  return pwd_context.verify(plain_password, hashed_password)
+  return bcrypt.checkpw(
+    plain_password.encode("utf-8"),
+    hashed_password.encode("utf-8")
+  )
 
 def create_access_token(data: dict):
   to_encode = data.copy()
