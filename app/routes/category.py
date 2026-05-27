@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.schemas.category import CategoryCreate, CategoryResponse
+from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.models.category import Category
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -59,3 +59,29 @@ def delete_category(category_id: int, db: Session = Depends(get_db), current_use
     db.commit()
 
     return {"message": "Deleted"}
+
+# PATCH: update category by ID
+@router.patch("/{category_id}", response_model=CategoryResponse)
+def update_category(
+    category_id: int,
+    update_data: CategoryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)):
+
+    category = db.query(Category).filter(
+        Category.id == category_id,
+        Category.user_id == current_user.id
+    ).first()
+
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    update_dict = update_data.model_dump(exclude_unset=True)
+    for field, value in update_dict.items():
+        setattr(category, field, value)
+
+    db.commit()
+    db.refresh(category)
+
+    return category
+

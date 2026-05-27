@@ -22,3 +22,10 @@ class TransactionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TransactionUpdate(BaseModel):
+    amount: float | None = None
+    type: Literal["income", "expense"] | None = None
+    category_id: int | None = None
+    description: str | None = None
+    date: datetime | None = None
