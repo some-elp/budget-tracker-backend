@@ -3,13 +3,16 @@ from sqlalchemy.orm import Session, joinedload
 from app.db import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionUpdate
+from app.models.category import Category
 from app.core.deps import get_current_user
 from app.models.user import User
+from datetime import date
+from typing import Literal
 
 router = APIRouter()
 
 # POST: create new transaction
-@router.post("/")
+@router.post("/", response_model=TransactionResponse)
 def create_transaction(
     transaction: TransactionCreate,
     db: Session = Depends(get_db),
@@ -25,7 +28,7 @@ def create_transaction(
 
     new_tx = Transaction(
         amount=transaction.amount,
-        type=transaction.type,
+        transaction_type=transaction.transaction_type,
         category_id=transaction.category_id,
         user_id=current_user.id,
         description=transaction.description,
@@ -40,11 +43,34 @@ def create_transaction(
 
 # GET: get all transactions
 @router.get("/", response_model=list[TransactionResponse])
-def get_transactions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return db.query(Transaction)\
-    .options(joinedload(Transaction.category))\
-    .filter(Transaction.user_id == current_user.id)\
-    .all()
+def get_transactions(
+    transaction_type: Literal["income", "expense"] | None = None,
+    category_id: int | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)):
+    
+    query = db.query(Transaction)\
+        .options(joinedload(Transaction.category))\
+        .filter(Transaction.user_id == current_user.id)\
+        .order_by(Transaction.date.desc())
+    
+    if transaction_type is not None:
+        query = query.filter(Transaction.transaction_type == transaction_type)
+    
+    if category_id is not None:
+        query = query.filter(Transaction.category_id == category_id)
+
+    if start_date is not None:
+        query = query.filter(Transaction.date >= start_date)
+    
+    if end_date is not None:
+        query = query.filter(Transaction.date <= end_date)
+
+    return query.all()
+
 
 # GET: get single transaction by ID
 @router.get("/{transaction_id}", response_model=TransactionResponse)
@@ -53,10 +79,12 @@ def get_transaction(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    tx = db.query(Transaction).filter(
-        Transaction.id == transaction_id,
-        Transaction.user_id == current_user.id
-    ).first()
+    tx = db.query(Transaction)\
+        .options(joinedload(Transaction.category))\
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id
+        ).first()
 
     if not tx:
       raise HTTPException(status_code=404, detail="Transaction not found")
@@ -91,8 +119,8 @@ def update_transaction(
     current_user: User = Depends(get_current_user)):
 
     tx = db.query(Transaction).filter(
-        Transaction.id = transaction_id,
-        Transaction.user_id = current_user.id
+        Transaction.id == transaction_id,
+        Transaction.user_id == current_user.id
     ).first()
 
     if not tx:
@@ -100,7 +128,7 @@ def update_transaction(
 
     if update_data.category_id is not None:
         category = db.query(Category).filter(
-            Category.id == update_date.category_id,
+            Category.id == update_data.category_id,
             Category.user_id == current_user.id
         ).first()
 
@@ -113,6 +141,11 @@ def update_transaction(
         setattr(tx, field, value)
 
     db.commit()
-    db.refresh(tx)
+    updated_tx = db.query(Transaction)\
+        .options(joinedload(Transaction.category))\
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == current_user.id
+        ).first()
 
-    return tx
+    return updated_tx

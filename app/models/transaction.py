@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, Float, String, DateTime
-from datetime import datetime
+from sqlalchemy import ForeignKey, Float, String, Date
+from datetime import date
 from app.db import Base
 
 class Transaction(Base):
@@ -9,8 +9,8 @@ class Transaction(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     amount: Mapped[float] = mapped_column(nullable=False)
-    type: Mapped[str] = mapped_column(String, nullable=False)  # "income" or "expense"
-    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    transaction_type: Mapped[str] = mapped_column(String, nullable=False)  # "income" or "expense"
+    date: Mapped[date] = mapped_column(Date, default=date.today)
     description: Mapped[str] = mapped_column(String, nullable=True)
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)

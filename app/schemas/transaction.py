@@ -1,22 +1,22 @@
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, Field
+from datetime import date as Date
 from typing import Optional, Literal
 from app.schemas.category import CategoryResponse
 
 
 class TransactionCreate(BaseModel):
     amount: float
-    type: Literal["income", "expense"]
+    transaction_type: Literal["income", "expense"]
     category_id: int
     description: Optional[str] = None
-    date: Optional[datetime] = None
+    date: Date = Field(default_factory=Date.today)
 
 class TransactionResponse(BaseModel):
     id: int
     amount: float
-    type: str
+    transaction_type: str
     description: Optional[str]
-    date: Optional[datetime]
+    date: Date | None
 
     category: CategoryResponse
 
@@ -25,7 +25,7 @@ class TransactionResponse(BaseModel):
 
 class TransactionUpdate(BaseModel):
     amount: float | None = None
-    type: Literal["income", "expense"] | None = None
+    transaction_type: Literal["income", "expense"] | None = None
     category_id: int | None = None
     description: str | None = None
-    date: datetime | None = None
+    date: Date | None = None
