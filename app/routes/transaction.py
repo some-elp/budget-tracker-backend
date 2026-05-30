@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from app.db import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionUpdate
+from app.schemas.summary import TransactionSummary
 from app.models.category import Category
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -71,6 +73,34 @@ def get_transactions(
 
     return query.all()
 
+# GET: get transactions summary
+@router.get("/summary", response_model=TransactionSummary)
+def get_transaction_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    income_total = db.query(
+        func.sum(Transaction.amount)
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_type == "income"
+    ).scalar()
+
+    expense_total = db.query(
+        func.sum(Transaction.amount)
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.transaction_type == "expense"
+    ).scalar()
+
+    income_total = income_total or 0
+    expense_total = expense_total or 0
+
+    return {
+        "total_income": income_total,
+        "total_expenses": expense_total,
+        "balance": income_total - expense_total
+    }
 
 # GET: get single transaction by ID
 @router.get("/{transaction_id}", response_model=TransactionResponse)

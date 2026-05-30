@@ -19,7 +19,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     raise HTTPException(status_code=400, detail="Email already registered")
 
   user = User(
-    email=email,
+    email=data.email,
     hashed_password=hash_password(data.password)
   )
 
